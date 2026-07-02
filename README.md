@@ -20,7 +20,7 @@ Maintained by the [FableEnergy](https://fableenergy.xyz) team — a TRON energy 
 
 ```bash
 git clone <this-repo> && cd tron-toolbox
-npm install                      # only needed for claim-vote-rewards / burn-energy
+npm ci                         # only needed for claim-vote-rewards / burn-energy; uses package-lock.json
 
 cp wallets.txt.example wallets.txt      # add your addresses
 cp .env.example .env                    # API keys / TG token as needed
@@ -50,13 +50,36 @@ Read-only. Sends Telegram alerts when SBM V2 risk factor ≥ 0.92 (1 = liquidati
 
 ### Testnet energy burner — `burn-energy.mjs`
 
-⚠️ Requires private key; Nile/Shasta testnet only. Clears available energy by deploying junk contracts in parallel — handy for testing energy delegate/reclaim.
+⚠️ Requires private key; **testnet only by default**. Clears available energy by deploying junk contracts in parallel. Mainnet hosts are **blocked** unless you pass `--i-know-mainnet` (you will burn real staked energy and TRX fees).
 
 ## Security
+
+### General
 
 - Read-only tools never touch private keys; they only call public APIs (TronGrid / JustLend / exchange tickers).
 - `wallets.txt`, `keys.txt`, and `.env` are in `.gitignore` and will not be committed by mistake.
 - Audit private-key tools before use; use at your own risk (MIT License, no warranty).
+
+### Private keys
+
+- Prefer **restricted active keys** with only `WithdrawBalance` (permission bit 13) for `claim-vote-rewards.mjs`; set `PERMISSION_ID` when using multisig restricted permissions.
+- Run `chmod 600 keys.txt`; only use env vars / key files on machines you control.
+- Treat `TRON_FULL_HOST` as a trust decision for signing tools (standard evil-RPC risk).
+
+### Dependencies
+
+- `package-lock.json` is committed; install with **`npm ci`** (not bare `npm install`) so `tronweb` resolves to the pinned version.
+- Review `tronweb` upgrades before bumping the lockfile.
+
+### JustLend V2 data source
+
+- V2 position / risk data comes from a REST mirror (`MOOLAH_V2_API`, default `https://zenvora.ablesdxd.link`); V1 uses `openapi.just.network`.
+- Override via `MOOLAH_V2_API` or `JUSTLEND_V2_API` in `.env` if you run your own endpoint.
+- Do **not** rely solely on `justlend-health-watch.mjs` for liquidation protection — API/oracle lag is minutes, not block-time.
+
+### `burn-energy.mjs` mainnet guard
+
+- Defaults to Nile testnet. Known mainnet hosts are refused unless `--i-know-mainnet` is passed.
 
 ## Why we built this
 

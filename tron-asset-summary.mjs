@@ -8,6 +8,7 @@
  *   wallets.txt        必填：一行一个 T 地址，可跟别名（如 `T… 主钱包`）；或 WALLETS=T…,T…
  *   lend-wallets.txt   可选：借币/JustLend 地址（链上余额 + V1/V2 存借仓位）；或 LEND_WALLETS=…
  *   TRONGRID_API_KEY   可选（.env 或环境变量）
+ *   MOOLAH_V2_API      可选，JustLend V2 REST 基址（默认社区镜像）
  *   REPORT_TZ          可选，展示时区，默认系统时区
  *
  * 运行：
@@ -21,11 +22,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ui, ESC, printTable, sa, shortAddr } from './lib/terminal-ui.mjs';
 import { loadWallets, getWalletLabel, requireWallets } from './lib/wallets.mjs';
+import { MOOLAH_V2_API } from './lib/justlend.mjs';
 
 const FULL_HOST = process.env.TRON_FULL_HOST || 'https://api.trongrid.io';
 const USDT_ADDR = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
 const USDD_ADDR = 'TEkxiTehnzSmSe2XqrBpo4XvfGmRVRne3U';
-const MOOLAH_V2_API = 'https://zenvora.ablesdxd.link';
 const HTML_OUT = path.resolve('tron-asset-summary.html');
 const HISTORY_FILE = path.resolve('tron-asset-summary-history.json');
 const HISTORY_MAX = Number(process.env.ASSET_HISTORY_MAX || 400);
@@ -707,7 +708,7 @@ function printReport(data, hist) {
     `${ESC.bold}JustLend 净值${ESC.reset} ${fmtNum(totals.lendProtocolNet, 2)} USDT`,
     `${ESC.bold}全部合计${ESC.reset}     ${ESC.green}${fmtNum(totals.grand, 2)} USDT${ESC.reset}`,
   ]);
-  ui.hint('TRX 含能量质押（frozenV2）；V1=openapi.just.network · V2=zenvora.ablesdxd.link');
+  ui.hint(`TRX 含能量质押（frozenV2）；V1=openapi.just.network · V2=${MOOLAH_V2_API}`);
   ui.hint('增删地址：wallets.txt · lend-wallets.txt');
   if (WANT_HTML) ui.hint(`网页报表：${HTML_OUT}`);
 }
@@ -964,7 +965,7 @@ footer{margin-top:28px;font-size:12px;color:var(--muted)}
 
   ${lendWallets.length ? `<section><h2>借币钱包 · JustLend</h2>${lendSections}</section>` : ''}
 
-  <footer>TRX 含能量质押（frozenV2）· TRX/BTC 行情 Binance → OKX → CoinGecko · V1=openapi.just.network · V2=zenvora.ablesdxd.link</footer>
+  <footer>TRX 含能量质押（frozenV2）· TRX/BTC 行情 Binance → OKX → CoinGecko · V1=openapi.just.network · V2=${MOOLAH_V2_API}</footer>
 </main>
 </body>
 </html>`;

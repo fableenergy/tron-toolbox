@@ -9,9 +9,13 @@
  * .env / 环境变量：
  *   TEST_PRIVATE_KEY=hex私钥
  *   TRON_FULL_HOST=https://nile.trongrid.io   （默认 Nile 测试网）
+ * 主网会被拒绝，除非加 --i-know-mainnet（自担风险）
  */
 import './lib/env.mjs';
 import { TronWeb } from 'tronweb';
+
+const argv = process.argv.slice(2);
+const I_KNOW_MAINNET = argv.includes('--i-know-mainnet');
 
 const pk = (process.env.TEST_PRIVATE_KEY || '').replace(/^0x/, '');
 if (!pk) {
@@ -19,8 +23,24 @@ if (!pk) {
   process.exit(1);
 }
 
+const FULL_HOST = (process.env.TRON_FULL_HOST || 'https://nile.trongrid.io').trim().replace(/\/$/, '');
+
+/** Refuse mainnet unless explicitly overridden — misconfig burns real staked energy + TRX fees. */
+function isLikelyMainnet(host) {
+  const h = host.toLowerCase();
+  if (/nile|shasta|testnet|devnet/.test(h)) return false;
+  if (/api\.trongrid\.io|tron\.grid|mainnet/.test(h)) return true;
+  return true; // unknown custom host: treat as risky (not a known testnet name)
+}
+
+if (isLikelyMainnet(FULL_HOST) && !I_KNOW_MAINNET) {
+  console.error(`拒绝在主网运行 burn-energy（当前 TRON_FULL_HOST=${FULL_HOST}）。`);
+  console.error('请改用 Nile/Shasta 测试网，或确认风险后加 --i-know-mainnet。');
+  process.exit(1);
+}
+
 const tronWeb = new TronWeb({
-  fullHost: process.env.TRON_FULL_HOST || 'https://nile.trongrid.io',
+  fullHost: FULL_HOST,
   privateKey: pk,
 });
 const me = tronWeb.defaultAddress.base58;

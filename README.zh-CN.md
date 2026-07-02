@@ -20,7 +20,7 @@
 
 ```bash
 git clone <this-repo> && cd tron-toolbox
-npm install                      # 只有 claim-vote-rewards / burn-energy 需要
+npm ci                         # 只有 claim-vote-rewards / burn-energy 需要；使用 package-lock.json 锁定版本
 
 cp wallets.txt.example wallets.txt      # 填入你的地址
 cp .env.example .env                    # 按需填 API Key / TG Token
@@ -50,13 +50,36 @@ node justlend-health-watch.mjs --dry    # 风险监控（只打印）
 
 ### 测试网能量消耗 `burn-energy.mjs`
 
-⚠️ 需要私钥，仅建议 Nile/Shasta 测试网。通过并发部署垃圾合约把可用能量清零，方便测试能量委托/回收。
+⚠️ 需要私钥，**默认仅允许测试网**。通过并发部署垃圾合约把可用能量清零。若 `TRON_FULL_HOST` 指向主网，脚本会**拒绝运行**，除非显式加 `--i-know-mainnet`（会真实烧掉质押能量并花 TRX 手续费）。
 
 ## 安全说明
+
+### 通用
 
 - 所有只读工具不接触私钥，只调公开 API（TronGrid / JustLend / 交易所行情）。
 - `wallets.txt`、`keys.txt`、`.env` 均已列入 `.gitignore`，不会被误提交。
 - 私钥类工具请自行审计代码后使用，风险自负（MIT License，no warranty）。
+
+### 私钥使用
+
+- `claim-vote-rewards.mjs` 建议用**受限 active 权限**（仅含权限位 13 WithdrawBalance）；多签受限权限时设置 `PERMISSION_ID`。
+- `keys.txt` 建议 `chmod 600`；只在可控机器上存放私钥或环境变量。
+- 签名类工具请谨慎选择 `TRON_FULL_HOST`（恶意 RPC 是行业通用风险）。
+
+### 依赖安装
+
+- 仓库已提交 `package-lock.json`；请用 **`npm ci`** 安装（不要用裸 `npm install`），确保 `tronweb` 版本与 lockfile 一致。
+- 升级 `tronweb` 前请自行审查变更。
+
+### JustLend V2 数据来源
+
+- V2 仓位/风险系数来自 REST 镜像（`MOOLAH_V2_API`，默认 `https://zenvora.ablesdxd.link`）；V1 用 `openapi.just.network`。
+- 可在 `.env` 用 `MOOLAH_V2_API` 或 `JUSTLEND_V2_API` 覆盖。
+- **不要单独依赖** `justlend-health-watch.mjs` 做清算防护——API/预言机有分钟级滞后。
+
+### `burn-energy.mjs` 主网拦截
+
+- 默认 Nile 测试网；识别到主网主机时会拒绝，除非加 `--i-know-mainnet`。
 
 ## 为什么做这个
 

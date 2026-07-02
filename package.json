@@ -7,6 +7,6 @@
   "engines": { "node": ">=18" },
   "keywords": ["tron", "trx", "usdt", "justlend", "trongrid", "energy", "staking", "defi"],
   "dependencies": {
-    "tronweb": "^6.0.0"
+    "tronweb": "6.4.0"
   }
 }
