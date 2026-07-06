@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# Vote reward claim — cron wrapper example (standalone tron-toolbox).
+#
+# Setup:
+#   cp claim-rewards-cron.sh.example claim-rewards-cron.sh
+#   chmod 700 claim-rewards-cron.sh
+#   Prepare keys.txt (chmod 600) or PRIVATE_KEYS in .env — see .env.example
+#   Optional: cp .env.cron.example .env.cron for CLAIM_MIN_REWARD_TRX overrides
+#
+# Crontab (every 2 days at 18:00 — adjust timezone / schedule as needed):
+#   0 18 */2 * * /path/to/tron-toolbox/claim-rewards-cron.sh
+#
+# Uses flock so overlapping runs exit cleanly (chain 24h rule is the real guard).
+set -uo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG="${SCRIPT_DIR}/claim-vote-rewards.log"
+LOCK="/tmp/tron_claim_vote_rewards.lock"
+ENV_CRON="${SCRIPT_DIR}/.env.cron"
+
+now() { date -u +%FT%TZ; }
+
+export PATH="/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+[ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" >/dev/null 2>&1
+
+NODE_BIN="${NODE_BIN:-node}"
+
+if [ -r "$ENV_CRON" ]; then
+  perm=$(stat -c '%a' "$ENV_CRON" 2>/dev/null || stat -f '%Lp' "$ENV_CRON" 2>/dev/null || echo '?')
+  case "$perm" in 600|400) : ;; *)
+    echo "$(now) [cron] warn: $ENV_CRON permission $perm (recommend chmod 600)" >>"$LOG"
+    ;;
+  esac
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      CLAIM_MIN_REWARD_TRX=*) export CLAIM_MIN_REWARD_TRX="${line#CLAIM_MIN_REWARD_TRX=}" ;;
+      NODE_BIN=*) NODE_BIN="${line#NODE_BIN=}" ;;
+      \#*|'') ;;
+    esac
+  done < "$ENV_CRON"
+fi
+
+exec 9>"$LOCK"
+if ! flock -n 9; then
+  echo "$(now) [cron] skip: lock held ($LOCK)" >>"$LOG"
+  exit 0
+fi
+
+cd "$SCRIPT_DIR" || { echo "$(now) [cron] cannot cd $SCRIPT_DIR" >>"$LOG"; exit 1; }
+
+echo "$(now) [cron] === claim-vote-rewards start ===" >>"$LOG"
+"$NODE_BIN" claim-vote-rewards.mjs --yes >>"$LOG" 2>&1
+code=$?
+echo "$(now) [cron] === exit $code ===" >>"$LOG"
+exit "$code"

@@ -13,3 +13,6 @@ tron-income-*.html
 tron-asset-summary.html
 .DS_Store
 ._*
+claim-vote-rewards.log
+.env.cron
+claim-rewards-cron.sh

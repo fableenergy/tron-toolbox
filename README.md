@@ -45,6 +45,8 @@ Read-only. Counts TRX inflows per address in `wallets.txt` from `START_DATE` to 
 Read-only. Sends Telegram alerts when SBM V2 risk factor ≥ 0.92 (1 = liquidation) or V1 health factor ≤ 1.05, with cooldown and recovery notifications. `--daemon` for continuous polling (default 10 min); `--test-notify` to test push.
 
 ### Vote reward claimer — `claim-vote-rewards.mjs`
+Cron: copy `claim-rewards-cron.sh.example` → `claim-rewards-cron.sh`, then add to crontab (see file header).
+
 
 ⚠️ Requires private key (`PRIVATE_KEYS` env var or `keys.txt`; use `chmod 600`, run only on machines you control). On-chain limit: one claim per account per 24h; Claims only when reward ≥ `CLAIM_MIN_REWARD_TRX` (default 100 TRX); use crontab every 2 days or `--daemon` for periodic checks (`CLAIM_CHECK_INTERVAL_H`, default 48). If the key is a restricted active permission (bit 13 WithdrawBalance), set `PERMISSION_ID` for multisig.
 
